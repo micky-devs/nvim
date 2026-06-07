@@ -11,5 +11,6 @@ return {
   require 'plugins.toggleterm',
   require 'plugins.devicons',
   require 'plugins.lazygit',
+  require 'plugins.lazydocker',
 }
 

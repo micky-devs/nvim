@@ -111,9 +111,9 @@ This configuration uses [lazy.nvim](https://github.com/folke/lazy.nvim) for plug
 3. Mason will auto-install the server on next startup
 
 ### LSP Troubleshooting
-- `:LspInfo` - Check active LSP servers
+- `:checkhealth vim.lsp` - Check active LSP servers and attached buffers
 - `:Mason` - Manage installed language servers
-- `:checkhealth lsp` - Diagnose LSP issues
+- `:LspInfo` - Show LSP client status
 
 ## Troubleshooting
 
@@ -134,8 +134,12 @@ This configuration uses [lazy.nvim](https://github.com/folke/lazy.nvim) for plug
 
 ### Treesitter Problems
 1. **No syntax highlighting**: Run `:TSUpdate` to update parsers
-2. **Missing languages**: Add to `ensure_installed` in `lua/plugins/treesitter.lua`
+2. **Missing languages**: Add to `ensure_installed` in `lua/plugins/treesitter.lua`, then `:TSInstall <lang>`
 3. **Parser errors**: Run `:checkhealth nvim-treesitter`
+
+> nvim-treesitter tracks the `main` branch. Highlighting and indentation are
+> enabled per-buffer via a `FileType` autocmd in `lua/plugins/treesitter.lua`,
+> not through plugin options. Parsers require the `tree-sitter` CLI.
 
 ### File Type Issues
 1. **Wrong filetype detected**: Add autocmd to `lua/config/options.lua`
@@ -166,9 +170,10 @@ cp -r ~/.config/nvim/backup/* ~/.config/nvim/
 ## Dependencies
 
 ### Required
-- Neovim 0.9+
+- Neovim 0.12+
 - Git
 - A Nerd Font (for icons)
+- `tree-sitter` CLI (for nvim-treesitter `main` branch): `brew install tree-sitter-cli`
 
 ### Recommended
 - `ripgrep` (for Telescope grep): `brew install ripgrep`

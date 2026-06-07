@@ -9,12 +9,14 @@ return {
     'WhoIsSethDaniel/mason-tool-installer.nvim',
 
     -- LSP status indicator
-    { 'j-hui/fidget.nvim', opts = {} },
+    { 'j-hui/fidget.nvim', opts = { notification = { window = { avoid = { 'NvimTree' } } } } },
 
     -- Completion capabilities (will be used when we add nvim-cmp)
     'hrsh7th/cmp-nvim-lsp',
   },
   config = function()
+    vim.lsp.log.set_level('ERROR')
+
     -- This function gets run when an LSP attaches to a particular buffer
     vim.api.nvim_create_autocmd('LspAttach', {
       group = vim.api.nvim_create_augroup('lsp-attach', { clear = true }),
@@ -38,7 +40,7 @@ return {
 
         -- Highlight references under cursor
         local client = vim.lsp.get_client_by_id(event.data.client_id)
-        if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight) then
+        if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight) then
           local highlight_augroup = vim.api.nvim_create_augroup('lsp-highlight', { clear = false })
           vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
             buffer = event.buf,
@@ -62,7 +64,7 @@ return {
         end
 
         -- Toggle inlay hints if supported
-        if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
+        if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
           map('<leader>th', function()
             vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
           end, '[T]oggle Inlay [H]ints')
@@ -89,9 +91,8 @@ return {
       },
     }
 
-    -- LSP server capabilities (enhanced by nvim-cmp when available)
-    local capabilities = vim.lsp.protocol.make_client_capabilities()
-    capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
+    -- LSP server capabilities (enhanced by nvim-cmp)
+    local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
     -- Define LSP servers to install and configure
     local servers = {
@@ -141,20 +142,19 @@ return {
       },
     }
 
-    -- Ensure servers are installed
-    local ensure_installed = vim.tbl_keys(servers or {})
-    require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+    -- Apply capabilities to every server, then register per-server config.
+    vim.lsp.config('*', { capabilities = capabilities })
+    for server_name, config in pairs(servers) do
+      vim.lsp.config(server_name, config)
+    end
 
-    -- Setup mason-lspconfig
+    -- Ensure servers are installed
+    require('mason-tool-installer').setup { ensure_installed = vim.tbl_keys(servers) }
+
+    -- mason-lspconfig auto-enables installed servers using the configs above.
     require('mason-lspconfig').setup {
-      handlers = {
-        function(server_name)
-          local server = servers[server_name] or {}
-          -- Pass capabilities to each server
-          server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-          require('lspconfig')[server_name].setup(server)
-        end,
-      },
+      ensure_installed = {},
+      automatic_enable = true,
     }
   end,
 }
